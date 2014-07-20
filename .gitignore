@@ -1,0 +1,7 @@
+.vim_session
+/vim/.VimballRecord
+/vim/cache
+/vim/user.vim
+/vim/.netrwhist
+/vim/.tmp/*
+/vim/.undo/*
