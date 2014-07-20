@@ -7,8 +7,7 @@ VimSettings
 安装VIM & GVIM
 --------------
 
-.. code:: bash
-    sudo apt-get install vim vim-gnome
+    `sudo apt-get install vim vim-gnome`
 
 
 下载配置
