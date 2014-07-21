@@ -1,0 +1,13 @@
+This is a mirror of http://www.vim.org/scripts/script.php?script_id=301
+
+This script provides some convenience when editing XML (and some SGML including
+HTML) formated documents. It allows you to jump to the beginning or end of the
+tag block your cursor is in. '%' will jump between '<' and '>' within the tag
+your cursor is in. When in insert mode and you finish a tag (pressing '>') the
+tag will be completed. If you press '>' twice it will complete the tag and
+place the cursor in the middle of the tags on it's own line.
+
+For the latest development snapshot visit
+    http://github.com/sukima/xmledit/
+
+Please fork this project. We need help making this better.

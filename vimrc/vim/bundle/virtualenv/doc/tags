@@ -1,0 +1,10 @@
+g:virtualenv_auto_activate	virtualenv.txt	/*g:virtualenv_auto_activate*
+g:virtualenv_directory	virtualenv.txt	/*g:virtualenv_directory*
+g:virtualenv_loaded	virtualenv.txt	/*g:virtualenv_loaded*
+g:virtualenv_stl_format	virtualenv.txt	/*g:virtualenv_stl_format*
+virtualenv	virtualenv.txt	/*virtualenv*
+virtualenv-author	virtualenv.txt	/*virtualenv-author*
+virtualenv-commands	virtualenv.txt	/*virtualenv-commands*
+virtualenv-configuration	virtualenv.txt	/*virtualenv-configuration*
+virtualenv.txt	virtualenv.txt	/*virtualenv.txt*
+virtualenv.vim	virtualenv.txt	/*virtualenv.vim*

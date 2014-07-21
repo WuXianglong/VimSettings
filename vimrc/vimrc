@@ -41,6 +41,8 @@ let g:mapleader = ","
 
 set clipboard=unnamedplus
 
+" auto read the new files
+set autoread
 set showmode                    " always show what mode we're currently editing in
 set nowrap                      " don't wrap lines
 set tabstop=4                   " a tab is four spaces
@@ -68,6 +70,9 @@ set listchars=tab:▸\ ,trail:·,extends:#,nbsp:·
 
 set nolist                      " don't show invisible characters by default,
 " but it is enabled for some file types (see later)
+set pastetoggle=<F2>            " when in insert mode, press <F2> to go to
+"    paste mode, where you can paste mass data
+"    that won't be autoindented
 set mouse=a                     " enable using the mouse if terminal emulator
 "    supports it (xterm does)
 set fileformats="unix,dos,mac"
@@ -85,7 +90,7 @@ nnoremap <C-e> 2<C-e>
 nnoremap <C-y> 2<C-y>
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" => Folding rules 
+" => Folding rules
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 set foldcolumn=2                " add a fold column
 set foldmethod=marker           " detect triple-{ style fold markers
@@ -110,7 +115,7 @@ endfunction
 set foldtext=MyFoldText()
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" => Editor layout 
+" => Editor layout
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 set termencoding=utf-8
 set encoding=utf-8
@@ -122,7 +127,7 @@ set cmdheight=2                 " use a status bar that is 2 rows high
 " }}}
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" => Vim behaviour 
+" => Vim behaviour
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 set hidden                      " hide buffers instead of closing them this
 "    means that the current buffer can be put
@@ -155,7 +160,7 @@ set noerrorbells                " don't beep
 set showcmd                     " show (partial) command in the last line of the screen
 "    this also shows visual selection info
 set nomodeline                  " disable mode lines (security measure)
-"set ttyfast                    " always use a fast terminal
+"set ttyfast                     " always use a fast terminal
 set cursorline                  " underline the current line, for quick orientation
 
 " Tame the quickfix window (open/close using ,f)
@@ -266,12 +271,12 @@ vnoremap <silent> <leader>r :call VisualSelection('replace')<CR>
 
 "
 " From an idea by Michael Naumann
-" 
+"
 function! CmdLine(str)
     exe "menu Foo.Bar :" . a:str
     emenu Foo.Bar
     unmenu Foo
-endfunction 
+endfunction
 
 function! VisualSelection(direction) range
     let l:saved_reg = @"
@@ -281,13 +286,13 @@ function! VisualSelection(direction) range
     let l:pattern = substitute(l:pattern, "\n$", "", "")
 
     if a:direction == 'b'
-        execute "normal ?" . l:pattern . ""
+        execute "normal ?" . l:pattern . "^M"
     elseif a:direction == 'gv'
         call CmdLine("vimgrep " . '/'. l:pattern . '/' . ' **/*.')
     elseif a:direction == 'replace'
         call CmdLine("%s" . '/'. l:pattern . '/')
     elseif a:direction == 'f'
-        execute "normal /" . l:pattern . ""
+        execute "normal /" . l:pattern . "^M"
     endif
 
     let @/ = l:pattern
@@ -309,13 +314,39 @@ cno $q <C-\>eDeleteTillSlash()<cr>
 :command! -nargs=+ Calc :py print <args>
 :py from math import *
 
-" Bash like keys for the command line
-cnoremap <C-A>		<Home>
-cnoremap <C-E>		<End>
-cnoremap <C-K>		<C-U>
-
-cnoremap <C-P> <Up>
-cnoremap <C-N> <Down>
+" Command-line mode keymappings:"{{{
+" <C-a>, A: move to head.
+cnoremap <C-a>          <Home>
+" <C-b>: previous char.
+cnoremap <C-b>          <Left>
+" <C-d>: delete char.
+cnoremap <C-d>          <Del>
+" <C-e>, E: move to end.
+cnoremap <C-e>          <End>
+" <C-f>: next char.
+cnoremap <C-f>          <Right>
+" <C-n>: next history.
+cnoremap <C-n>          <Down>
+" <C-p>: previous history.
+cnoremap <C-p>          <Up>
+" <C-k>, K: delete to end.
+cnoremap <C-k> <C-\>e getcmdpos() == 1 ? '' : getcmdline()[:getcmdpos()-2]<CR>
+" <C-y>: paste.
+cnoremap <C-y>          <C-r>*
+" <C-s>: view history.
+cnoremap <C-s>          <C-f>
+" <C-l>: view completion list.
+cnoremap <C-l>          <C-d>
+" <A-b>, W: move to previous word.
+cnoremap <A-b>          <S-Left>
+" <A-f>, B: move to next word.
+cnoremap <A-f>          <S-Right>
+cnoremap <S-TAB>        <C-p>
+" <C-g>: decide candidate.
+cnoremap <C-g>          <Space><C-h>
+" <C-t>: insert space.
+cnoremap <C-t>          <Space>
+"}}}
 
 map <C-h> <C-w>h
 map <C-j> <C-w>j
@@ -324,7 +355,7 @@ map <C-l> <C-w>l
 
 func! Cwd()
     let cwd = getcwd()
-    return "e " . cwd 
+    return "e " . cwd
 endfunc
 
 func! DeleteTillSlash()
@@ -340,7 +371,7 @@ func! DeleteTillSlash()
         else
             let g:cmd_edited = substitute(g:cmd, "\\(.*\[\\\\\]\\).*\[\\\\\]", "\\1", "")
         endif
-    endif   
+    endif
     return g:cmd_edited
 endfunc
 
@@ -362,6 +393,10 @@ map <C-k> <C-W>k
 map <C-h> <C-W>h
 map <C-l> <C-W>l
 
+map <leader>bb :b#<cr>
+map <C-X>b :b#<cr>
+map <C-X><C-F> :e %:p:h
+
 " Close the current buffer
 map <leader>bd :Bclose<cr>
 
@@ -374,9 +409,9 @@ map <left> :bp<cr>
 
 " Tab configuration
 map <leader>tn :tabnew! %<cr>
-map <leader>te :tabedit 
+map <leader>te :tabedit
 map <leader>tc :tabclose<cr>
-map <leader>tm :tabmove 
+map <leader>tm :tabmove
 
 " new tab
 nnoremap <C-t>     :tabnew<cr>
@@ -432,7 +467,7 @@ function! <SID>BufcloseCloseIt()
     endif
 endfunction
 
-" Specify the behavior when switching between buffers 
+" Specify the behavior when switching between buffers
 try
     set switchbuf=usetab
     set stal=2
@@ -492,7 +527,7 @@ inoremap $t <><esc>i
 """"""""""""""""""""""""""""""
 " => General Abbrevs
 """"""""""""""""""""""""""""""
-iab xdate <c-r>=strftime("%d/%m/%y %H:%M:%S")<cr>
+iab xdate <c-r>=strftime("%Y-%m-%d %H:%M:%S")<cr>
 
 """"""""""""""""""""""""""""""
 " => Editing mapping
@@ -611,8 +646,9 @@ map <leader>s? z=
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 let g:CommandTMaxHeight = 20
 let g:CommandTMaxFiles = 20
-let g:CommandTMatchWindowAtTop = 1 
+let g:CommandTMatchWindowAtTop = 1
 
+let g:session_autosave="no"
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Neocomplcache config
@@ -623,20 +659,22 @@ let g:acp_enableAtStartup = 0
 let g:neocomplcache_enable_at_startup = 1
 " Use smartcase.
 let g:neocomplcache_enable_smart_case = 1
-" Use camel case completion.
-let g:neocomplcache_enable_camel_case_completion = 1
-" Use underbar completion.
-let g:neocomplcache_enable_underbar_completion = 1
 " Set minimum syntax keyword length.
 let g:neocomplcache_min_syntax_length = 3
 let g:neocomplcache_lock_buffer_name_pattern = '\*ku\*'
 
+" Enable heavy features.
+" Use camel case completion.
+"let g:neocomplcache_enable_camel_case_completion = 1
+" Use underbar completion.
+"let g:neocomplcache_enable_underbar_completion = 1
+
 " Define dictionary.
 let g:neocomplcache_dictionary_filetype_lists = {
-            \ 'default' : '',
-            \ 'vimshell' : $HOME.'/.vimshell_hist',
-            \ 'scheme' : $HOME.'/.gosh_completions'
-            \ }
+    \ 'default' : '',
+    \ 'vimshell' : $HOME.'/.vimshell_hist',
+    \ 'scheme' : $HOME.'/.gosh_completions'
+        \ }
 
 " Define keyword.
 if !exists('g:neocomplcache_keyword_patterns')
@@ -655,14 +693,31 @@ imap <expr><TAB> neocomplcache#sources#snippets_complete#expandable() ? "\<Plug>
 
 " Recommended key-mappings.
 " <CR>: close popup and save indent.
-inoremap <expr><CR>  neocomplcache#smart_close_popup() . "\<CR>"
+inoremap <silent> <CR> <C-r>=<SID>my_cr_function()<CR>
+function! s:my_cr_function()
+  return neocomplcache#smart_close_popup() . "\<CR>"
+  " For no inserting <CR> key.
+  "return pumvisible() ? neocomplcache#close_popup() : "\<CR>"
+endfunction
 " <TAB>: completion.
-"inoremap <expr><TAB>  pumvisible() ? "\<C-n>" : "\<TAB>"
+" inoremap <expr><TAB>  pumvisible() ? "\<C-n>" : "\<TAB>"
 " <C-h>, <BS>: close popup and delete backword char.
 inoremap <expr><C-h> neocomplcache#smart_close_popup()."\<C-h>"
 inoremap <expr><BS> neocomplcache#smart_close_popup()."\<C-h>"
 inoremap <expr><C-y>  neocomplcache#close_popup()
 inoremap <expr><C-e>  neocomplcache#cancel_popup()
+" Close popup by <Space>.
+"inoremap <expr><Space> pumvisible() ? neocomplcache#close_popup() : "\<Space>"
+
+" For cursor moving in insert mode(Not recommended)
+"inoremap <expr><Left>  neocomplcache#close_popup() . "\<Left>"
+"inoremap <expr><Right> neocomplcache#close_popup() . "\<Right>"
+"inoremap <expr><Up>    neocomplcache#close_popup() . "\<Up>"
+"inoremap <expr><Down>  neocomplcache#close_popup() . "\<Down>"
+" Or set this.
+"let g:neocomplcache_enable_cursor_hold_i = 1
+" Or set this.
+"let g:neocomplcache_enable_insert_char_pre = 1
 
 " AutoComplPop like behavior.
 "let g:neocomplcache_enable_auto_select = 1
@@ -688,14 +743,40 @@ endif
 let g:neocomplcache_omni_patterns.ruby = '[^. *\t]\.\w*\|\h\w*::'
 "autocmd FileType ruby setlocal omnifunc=rubycomplete#Complete
 let g:neocomplcache_omni_patterns.php = '[^. \t]->\h\w*\|\h\w*::'
-let g:neocomplcache_omni_patterns.c = '\%(\.\|->\)\h\w*'
-let g:neocomplcache_omni_patterns.cpp = '\h\w*\%(\.\|->\)\h\w*\|\h\w*::'
+let g:neocomplcache_omni_patterns.c = '[^.[:digit:] *\t]\%(\.\|->\)'
+let g:neocomplcache_omni_patterns.cpp = '[^.[:digit:] *\t]\%(\.\|->\)\|\h\w*::'
 
-" => Managing buffers with LustyJuggler 
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" For perlomni.vim setting.
+" https://github.com/c9s/perlomni.vim
+let g:neocomplcache_omni_patterns.perl = '\h\w*->\h\w*\|\h\w*::'
+
+
+" Plugin key-mappings.
+imap <C-k>     <Plug>(neosnippet_expand_or_jump)
+smap <C-k>     <Plug>(neosnippet_expand_or_jump)
+xmap <C-k>     <Plug>(neosnippet_expand_target)
+
+" SuperTab like snippets behavior.
+imap <expr><TAB> neosnippet#expandable_or_jumpable() ?
+\ "\<Plug>(neosnippet_expand_or_jump)"
+\: pumvisible() ? "\<C-n>" : "\<TAB>"
+smap <expr><TAB> neosnippet#expandable_or_jumpable() ?
+\ "\<Plug>(neosnippet_expand_or_jump)"
+\: "\<TAB>"
+
+" For snippet_complete marker.
+if has('conceal')
+  set conceallevel=2 concealcursor=i
+endif
+
+ " Enable snipMate compatibility feature.
+let g:neosnippet#enable_snipmate_compatibility = 1
+
+" Tell Neosnippet about the other snippets
+let g:neosnippet#snippets_directory='~/.vim/bundle/vim-snippets/snippets'
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" => Conflict markers 
+" => Conflict markers
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " highlight conflict markers
 match ErrorMsg '^\(<\|=\|>\)\{7\}\([^=].\+\)\?$'
@@ -710,6 +791,7 @@ nmap <leader>n :TrinityToggleAll<CR>
 nmap <leader>nl :TrinityToggleNERDTree<CR>
 nmap <leader>nr :TrinityToggleTagList<CR>
 "nmap <leader>nd :TrinityToggleSourceExplorer<CR>
+nmap <leader>nn :NERDTreeToggle<CR>
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Filetype specific handling
@@ -754,7 +836,7 @@ if has("autocmd")
             set ft=html
         endfun
 
-        autocmd BufNewFile,BufRead *.html,*.htm call s:DetectHTMLVariant()
+        autocmd BufNewFile,BufRead *.django,*.html,*.htm call s:DetectHTMLVariant()
 
         " Auto-closing of HTML/XML tags
         let g:closetag_default_xml=1
@@ -789,7 +871,7 @@ if has("autocmd")
         " earlier, as it is important)
         autocmd filetype python setlocal expandtab shiftwidth=4 tabstop=4 softtabstop=4
         autocmd filetype python setlocal textwidth=80
-        "autocmd filetype python match ErrorMsg '\%>80v.\+' 
+        "autocmd filetype python match ErrorMsg '\%>80v.\+'
 
         " But disable autowrapping as it is super annoying
         autocmd filetype python setlocal formatoptions-=t
@@ -805,6 +887,7 @@ if has("autocmd")
         autocmd filetype python imap <buffer> <S-F5> <Esc>:w<CR>:!ipython %<CR>
 
         " Run a quick static syntax check every time we save a Python file
+        "autocmd BufWritePost *.py call Pyflakes()
     augroup end " }}}
 
     augroup ruby_files "{{{
@@ -867,7 +950,7 @@ if has("autocmd")
 endif " has("autocmd")
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" => Restore cursor position upon reopening files 
+" => Restore cursor position upon reopening files
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 autocmd BufReadPost * if line("'\"") > 1 && line("'\"") <= line("$") | exe "normal! g`\"" | endif
 
@@ -877,7 +960,7 @@ autocmd BufReadPost * if line("'\"") > 1 && line("'\"") <= line("$") | exe "norm
 source ~/vimrc/vim/autocorrect.vim
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" => Extra vi-compatibility 
+" => Extra vi-compatibility
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " set extra vi-compatible options
 set cpoptions+=$     " when changing a line, don't redisplay, but put a '$' at
@@ -888,7 +971,7 @@ au filetype vim set formatoptions-=o
 " for vim files, so explicitly unset it again
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" => Extra user or machine specific settings 
+" => Extra user or machine specific settings
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 source ~/vimrc/vim/user.vim
 
@@ -922,6 +1005,7 @@ if has("gui_running")
         set guifont=DejaVu\ Sans\ Mono\ 10.5
         set cmdheight=1
         colorscheme molokai_deep
+		  colorscheme molokai
     endfunction
     command! -bang -nargs=0 ScreenRecordMode call ScreenRecordMode()
 endif
@@ -944,13 +1028,23 @@ else
     nnoremap <F12> "+p
 endif
 
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => VimClojure
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let vimclojure#HighlightBuiltins=1
+let vimclojure#HighlightContrib=1
+let vimclojure#DynamicHighlighting=1
+let vimclojure#ParenRainbow=1
+let vimclojure#WantNailgun = 1
+let vimclojure#NailgunClient = "~/vimrc/vim/bundle/vimClojureLib/vimclojure-nailgun-client/ng"
+
 " For NERDTREE
 inoremap <F8> <ESC>:NERDTreeToggle<CR>
 nnoremap <F8> <ESC>:NERDTreeToggle<CR>
 
 " For Taglist
 let Tlist_Auto_Highlight_Tag=1
-let Tlist_Auto_Open=0
+let Tlist_Auto_Open=1
 let Tlist_Auto_Update=1
 let Tlist_Display_Tag_Scope=1
 let Tlist_Exit_OnlyWindow=1
@@ -962,8 +1056,18 @@ let Tlist_Use_SingleClick=1
 inoremap <silent> <F9> :TlistToggle<CR>
 nnoremap <silent> <F9> :TlistToggle<CR>
 
-" auto read the new files
-set autoread
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => tabular
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" idea from  http://vimcasts.org/episodes/aligning-text-with-tabular-vim
+
+" temp diabled for conflicts
+"if exists(":Tabularize")
+  "nmap <Leader>a= :Tabularize /=<CR>
+  "vmap <Leader>a= :Tabularize /=<CR>
+  "nmap <Leader>a: :Tabularize /:\zs<CR>
+  "vmap <Leader>a: :Tabularize /:\zs<CR>
+"endif
 
 " Auto close pair
 function! ClosePair(char) 
@@ -985,3 +1089,79 @@ inoremap [ []<ESC>i
 inoremap ] <c-r>=ClosePair(']')<CR>
 inoremap < <><ESC>i
 inoremap > <c-r>=ClosePair('>')<CR>
+
+"inoremap <silent> = =<Esc>:call <SID>ealign()<CR>a
+"function! s:ealign()
+  "let p = '^.*=.*$'
+  "if exists(':Tabularize') && getline('.') =~# '^.*[=]' && (getline(line('.')-1) =~# p || getline(line('.')+1) =~# p)
+    "let column = strlen(substitute(getline('.')[0:col('.')],'[^=]','','g'))
+    "let position = strlen(matchstr(getline('.')[0:col('.')],'.*=\s*\zs.*'))
+    "Tabularize/=/l1
+    "normal! 0
+    "call search(repeat('[^=]*=',column).'\s\{-\}'.repeat('.',position),'ce',line('.'))
+  "endif
+"endfunction
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => syntastic
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+let g:syntastic_auto_loc_list=1
+"sudo pip install pyflakes
+"sudo apt-get install tidy
+
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => FuzzyFinder
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+"map <leader>t :FuzzyFinderTextMate<CR>
+"let g:fuf_modesDisable = ['mrucmd',]
+"nnoremap <leader>fb :FufBuffer<CR>
+"nnoremap <leader>fr :FufFile<CR>
+"nnoremap <leader>ff :FufCoverageFile<CR>
+"nnoremap <leader>fd :FufDir<CR>
+"nnoremap <leader>fm :FufMruFile<CR>
+"nnoremap <leader>fh :FufHelp<CR>
+"nnoremap <leader>fl :FufLine<CR>
+
+let g:ctrlp_map = '<leader>ff'
+let g:ctrlp_working_path_mode = "ra"
+let g:ctrlp_match_window_bottom = 0
+let g:ctrlp_extensions = ['dir','line', 'changes', 'mixed', 'bookmarkdir']
+nnoremap <leader>fb :CtrlPBuffer<CR>
+nnoremap <leader>fr :CtrlPRoot<CR>
+nnoremap <leader>ff :CtrlP<CR>
+nnoremap <leader>fd :CtrlPDir<CR>   
+nnoremap <leader>fm :CtrlPMRU<CR>
+"nnoremap <leader>fh :FufHelp<CR>
+nnoremap <leader>fl :CtrlPLine<CR>
+
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" => ScreenShell
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+"let g:ScreenShellGnuScreenVerticalSupport = 'patch'
+
+"nmap <leader>s :ScreenShellVertical<CR>
+"nmap <leader>sp :ScreenShellVertical ipython<CR>
+"nmap <leader>ss :ScreenSend<CR>
+"nmap <leader>sq :ScreenQuit<CR>
+
+"function! s:ScreenShellListener()
+    "if g:ScreenShellActive
+       "map <C-c><C-c> :ScreenSend<cr>
+        "map <C-c><C-x> :ScreenQuit<cr>
+    "else
+        "map <C-c><C-c> :ScreenShell<cr>
+    "endif
+"endfunction
+
+"map <C-c><C-c> :ScreenShell<cr>
+"augroup ScreenShellEnter
+    "autocmd User * call <SID>ScreenShellListener()
+"augroup END
+"augroup ScreenShellExit
+    "autocmd User * call <SID>ScreenShellListener()
+"augroup END
+set novisualbell
+set fileencodings=utf-8,gbk,ucs-bom,cp936

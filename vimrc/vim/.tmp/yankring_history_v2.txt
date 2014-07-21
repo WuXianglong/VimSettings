@@ -1,0 +1,4 @@
+,V
+问题----在使用sudo vim命令的时候neocomplcache.vim插件报错，考虑增加sudo.vim,V
+" auto read the new files,v
+2,v

@@ -1,0 +1,5 @@
+This is a mirror of http://www.vim.org/scripts/script.php?script_id=3486
+
+The virtualenv plugin allows you to activate and deactivate a virtualenv within a live Vim session.
+
+GitHub URL: https://github.com/jmcantrell/vim-virtualenv

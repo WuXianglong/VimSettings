@@ -1,7 +1,7 @@
 "=============================================================================
 " FILE: syntax_complete.vim
 " AUTHOR:  Shougo Matsushita <Shougo.Matsu@gmail.com>
-" Last Modified: 10 Oct 2011.
+" Last Modified: 26 Sep 2013.
 " License: MIT license  {{{
 "     Permission is hereby granted, free of charge, to any person obtaining
 "     a copy of this software and associated documentation files (the
@@ -27,66 +27,57 @@
 let s:save_cpo = &cpo
 set cpo&vim
 
+" Important variables.
+if !exists('s:syntax_list')
+  let s:syntax_list = {}
+endif
+
 let s:source = {
       \ 'name' : 'syntax_complete',
-      \ 'kind' : 'plugin',
+      \ 'kind' : 'keyword',
+      \ 'mark' : '[S]',
+      \ 'rank' : 4,
       \}
 
-function! s:source.initialize()"{{{
-  " Initialize.
-  let s:syntax_list = {}
-  let s:completion_length = neocomplcache#get_auto_completion_length('syntax_complete')
-
-  " Set rank.
-  call neocomplcache#set_dictionary_helper(g:neocomplcache_plugin_rank, 'syntax_complete', 7)
-
+function! s:source.initialize() "{{{
   " Set caching event.
   autocmd neocomplcache Syntax * call s:caching()
 
-  " Add command.
-  command! -nargs=? -complete=customlist,neocomplcache#filetype_complete NeoComplCacheCachingSyntax call s:recaching(<q-args>)
-
   " Create cache directory.
-  if !isdirectory(g:neocomplcache_temporary_dir . '/syntax_cache')
-    call mkdir(g:neocomplcache_temporary_dir . '/syntax_cache')
+  if !isdirectory(neocomplcache#get_temporary_directory() . '/syntax_cache')
+     \ && !neocomplcache#util#is_sudo()
+    call mkdir(neocomplcache#get_temporary_directory() . '/syntax_cache')
   endif
 
   " Initialize check.
   call s:caching()
 endfunction"}}}
 
-function! s:source.finalize()"{{{
+function! s:source.finalize() "{{{
   delcommand NeoComplCacheCachingSyntax
 endfunction"}}}
 
-function! s:source.get_keyword_list(cur_keyword_str)"{{{
-  if neocomplcache#within_comment()
-    return []
-  endif
-
+function! s:source.get_keyword_list(complete_str) "{{{
   let list = []
 
   let filetype = neocomplcache#get_context_filetype()
   if !has_key(s:syntax_list, filetype)
-    let keyword_lists = neocomplcache#cache#index_load_from_cache('syntax_cache', filetype, s:completion_length)
-    if !empty(keyword_lists)
-      " Caching from cache.
-      let s:syntax_list[filetype] = keyword_lists
-    endif
+    call s:caching()
   endif
 
-  for source in neocomplcache#get_sources_list(s:syntax_list, filetype)
-    let list += neocomplcache#dictionary_filter(source, a:cur_keyword_str, s:completion_length)
+  for syntax in neocomplcache#get_sources_list(
+        \ s:syntax_list, filetype)
+    let list += neocomplcache#dictionary_filter(syntax, a:complete_str)
   endfor
 
   return list
 endfunction"}}}
 
-function! neocomplcache#sources#syntax_complete#define()"{{{
+function! neocomplcache#sources#syntax_complete#define() "{{{
   return s:source
 endfunction"}}}
 
-function! s:caching()"{{{
+function! s:caching() "{{{
   if &filetype == '' || &filetype ==# 'vim'
     return
   endif
@@ -105,13 +96,13 @@ function! s:caching()"{{{
         endif
       else
         let s:syntax_list[filetype] = neocomplcache#cache#index_load_from_cache(
-            \ 'syntax_cache', filetype, s:completion_length)
+              \      'syntax_cache', filetype, 1)
       endif
     endif
   endfor
 endfunction"}}}
 
-function! s:recaching(filetype)"{{{
+function! neocomplcache#sources#syntax_complete#recaching(filetype) "{{{
   if a:filetype == ''
     let filetype = &filetype
   else
@@ -122,7 +113,7 @@ function! s:recaching(filetype)"{{{
   let s:syntax_list[filetype] = s:caching_from_syn(filetype)
 endfunction"}}}
 
-function! s:caching_from_syn(filetype)"{{{
+function! s:caching_from_syn(filetype) "{{{
   call neocomplcache#print_caching(
         \ 'Caching syntax "' . a:filetype . '"... please wait.')
 
@@ -139,19 +130,20 @@ function! s:caching_from_syn(filetype)"{{{
   let keyword_pattern = neocomplcache#get_keyword_pattern(a:filetype)
 
   let dup_check = {}
-  let menu = '[S] '
+
+  let filetype_pattern = tolower(a:filetype)
 
   let keyword_lists = {}
   for line in split(syntax_list, '\n')
     if line =~ '^\h\w\+'
       " Change syntax group name.
-      let menu = printf('[S] %.'.
-            \ g:neocomplcache_max_menu_width.'s', matchstr(line, '^\h\w\+'))
-      let line = substitute(line, '^\h\w\+\s*xxx', '', '')
+      let group_name = matchstr(line, '^\S\+')
+      let line = substitute(line, '^\S\+\s*xxx', '', '')
     endif
 
     if line =~ 'Syntax items' || line =~ '^\s*links to' ||
-          \line =~ '^\s*nextgroup='
+          \ line =~ '^\s*nextgroup=' ||
+          \ strridx(tolower(group_name), filetype_pattern) != 0
       " Next line.
       continue
     endif
@@ -169,19 +161,18 @@ function! s:caching_from_syn(filetype)"{{{
 
     " Add keywords.
     let match_num = 0
+    let completion_length = 2
     let match_str = matchstr(line, keyword_pattern, match_num)
     while match_str != ''
       " Ignore too short keyword.
       if len(match_str) >= g:neocomplcache_min_syntax_length
             \ && !has_key(dup_check, match_str)
             \&& match_str =~ '^[[:print:]]\+$'
-        let keyword = { 'word' : match_str, 'menu' : menu }
-
-        let key = tolower(keyword.word[: s:completion_length-1])
+        let key = tolower(match_str[: completion_length-1])
         if !has_key(keyword_lists, key)
           let keyword_lists[key] = []
         endif
-        call add(keyword_lists[key], keyword)
+        call add(keyword_lists[key], match_str)
 
         let dup_check[match_str] = 1
       endif
@@ -203,12 +194,7 @@ function! s:caching_from_syn(filetype)"{{{
   return keyword_lists
 endfunction"}}}
 
-" LengthOrder."{{{
-function! s:compare_length(i1, i2)
-  return a:i1.word < a:i2.word ? 1 : a:i1.word == a:i2.word ? 0 : -1
-endfunction"}}}
-
-function! s:substitute_candidate(candidate)"{{{
+function! s:substitute_candidate(candidate) "{{{
   let candidate = a:candidate
 
   " Collection.
@@ -233,7 +219,7 @@ function! s:substitute_candidate(candidate)"{{{
   return candidate
 endfunction"}}}
 
-function! s:split_pattern(keyword_pattern)"{{{
+function! s:split_pattern(keyword_pattern) "{{{
   let original_pattern = a:keyword_pattern
   let result_patterns = []
   let analyzing_patterns = [ '' ]
@@ -290,7 +276,7 @@ function! s:split_pattern(keyword_pattern)"{{{
   return result_patterns
 endfunction"}}}
 
-function! s:match_pair(string, start_pattern, end_pattern, start_cnt)"{{{
+function! s:match_pair(string, start_pattern, end_pattern, start_cnt) "{{{
   let end = -1
   let start_pattern = '\%(' . a:start_pattern . '\)'
   let end_pattern = '\%(' . a:end_pattern . '\)'
@@ -325,7 +311,7 @@ function! s:match_pair(string, start_pattern, end_pattern, start_cnt)"{{{
   endif
 endfunction"}}}
 
-" Global options definition."{{{
+" Global options definition. "{{{
 if !exists('g:neocomplcache_min_syntax_length')
   let g:neocomplcache_min_syntax_length = 4
 endif
