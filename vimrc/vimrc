@@ -792,6 +792,7 @@ nmap <leader>nl :TrinityToggleNERDTree<CR>
 nmap <leader>nr :TrinityToggleTagList<CR>
 "nmap <leader>nd :TrinityToggleSourceExplorer<CR>
 nmap <leader>nn :NERDTreeToggle<CR>
+let NERDTreeIgnore=['\.vim$', '\.pyc$', '\.class$']
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " => Filetype specific handling
