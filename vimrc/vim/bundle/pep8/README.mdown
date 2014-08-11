@@ -1,4 +1,4 @@
-vim-pep8 ![Project status](http://stillmaintained.com/nvie/vim-pep8.png)
+vim-pep8
 ========
 
 Installation
