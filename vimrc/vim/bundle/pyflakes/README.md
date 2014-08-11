@@ -1,4 +1,4 @@
-vim-pyflakes ![Project status](http://stillmaintained.com/nvie/vim-pyflakes.png)
+vim-pyflakes
 ============
 
 Installation
