@@ -10,6 +10,14 @@ VimSettings
     sudo apt-get install vim vim-gnome
 
 
+其他依赖
+---------
+
+    sudo apt-get install pep8
+    sudo apt-get install ctags
+    sudo apt-get install pyflakes
+
+
 下载配置
 --------
 
